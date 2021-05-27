@@ -10,12 +10,12 @@ import json
 import torch
 import torch.utils.data
 from torchvision.transforms import transforms as T
-from opts import opts
-from models.model import create_model, load_model, save_model
-from models.data_parallel import DataParallel
-from logger import Logger
-from datasets.dataset_factory import get_dataset
-from trains.train_factory import train_factory
+from lib.opts import opts, update_dataset_info_and_set_heads
+from lib.models.model import create_model, load_model, save_model
+from lib.models.data_parallel import DataParallel
+from lib.logger import Logger
+from lib.datasets.dataset.mot import MOTDataset
+from lib.trains.train_factory import train_factory
 
 
 def main(opt):
@@ -23,20 +23,12 @@ def main(opt):
     torch.backends.cudnn.benchmark = not opt.not_cuda_benchmark and not opt.test
 
     print('Setting up data...')
-    Dataset = get_dataset(opt.dataset, opt.task)
-    f = open(opt.data_cfg)
-    data_config = json.load(f)
-    trainset_paths = data_config['train']
-    dataset_root = data_config['root']
-    f.close()
     transforms = T.Compose([T.ToTensor()])
-    dataset = Dataset(opt, dataset_root, trainset_paths, (1088, 608), augment=True, transforms=transforms)
-    opt = opts().update_dataset_info_and_set_heads(opt, dataset)
+    dataset = MOTDataset(opt, '/home/houyz/Data/MOT17/train', (1088, 608), augment=True, transforms=transforms)
+    opt = update_dataset_info_and_set_heads(opt, dataset)
     print(opt)
 
     logger = Logger(opt)
-
-    os.environ['CUDA_VISIBLE_DEVICES'] = opt.gpus_str
     opt.device = torch.device('cuda' if opt.gpus[0] >= 0 else 'cpu')
 
     print('Creating model...')
@@ -93,6 +85,5 @@ def main(opt):
 
 
 if __name__ == '__main__':
-    torch.cuda.set_device(2)
     opt = opts().parse()
     main(opt)
