@@ -123,10 +123,10 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
     return frame_id, timer.average_time, timer.calls
 
 
-def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), exp_name='demo',
+def main(opt, root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), exp_name='demo',
          save_images=False, save_videos=False, show_image=True):
     logger.setLevel(logging.INFO)
-    result_root = os.path.join(data_root, '..', 'dets', exp_name)
+    result_root = os.path.join(root, '..', 'dets', exp_name)
     mkdir_if_missing(result_root)
     data_type = 'mot'
 
@@ -135,9 +135,9 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
     n_frame = 0
     timer_avgs, timer_calls = [], []
     for seq in seqs:
-        output_dir = os.path.join(data_root, '..', 'outputs', exp_name, seq) if save_images or save_videos else None
+        output_dir = os.path.join(root, '..', 'outputs', exp_name, seq) if save_images or save_videos else None
         logger.info('start seq: {}'.format(seq))
-        dataloader = datasets.LoadImages(osp.join(data_root, seq, 'img1'), opt.img_size)
+        dataloader = datasets.LoadImages(osp.join(root, seq, 'img1'), opt.img_size)
         result_filename = os.path.join(result_root, '{}.txt'.format(seq))
 
         nf, ta, tc = eval_seq(opt, dataloader, data_type, result_filename,
@@ -154,36 +154,9 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
 
 
 if __name__ == '__main__':
-    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     opt = opts().init()
-    if opt.val_hie:
-        seqs_str = '''1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19'''
-        #seqs_str = '''9'''
-        #seqs_str = '''11 12 13 14 15 16 17 18 19'''
-        data_root = '/data/yfzhang/MOT/JDE/HIE/HIE20/images/train'
-    elif opt.test_hie:
-        seqs_str = '''20 21 22 23 24 25 26 27 28 29 30 31 32'''
-        seqs_str = '''25'''
-        data_root = '/data/yfzhang/MOT/JDE/HIE/HIE20/images/test'
-    elif opt.val_mot17:
-        seqs_str = '''MOT17-02-SDP
-                      MOT17-04-SDP
-                      MOT17-05-SDP
-                      MOT17-09-SDP
-                      MOT17-10-SDP
-                      MOT17-11-SDP
-                      MOT17-13-SDP'''
-        #seqs_str = '''MOT17-02-SDP'''
-        data_root = os.path.join(opt.data_dir, 'MOT17/images/train')
-    else:
-        seqs_str = None
-        data_root = None
-    seqs = [seq.strip() for seq in seqs_str.split()]
-
     main(opt,
-         data_root=data_root,
-         seqs=seqs,
-         exp_name='fairmot_mot17',
+         root=data_root,
          show_image=False,
          save_images=False,
          save_videos=False)

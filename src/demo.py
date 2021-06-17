@@ -30,7 +30,5 @@ if __name__ == '__main__':
     opt = opts().init()
     root = '/home/houyz/Data/cattle/test'
     for seq_name in sorted(os.listdir(root)):
-        if '4-05-21' in seq_name:
-            continue
         print(seq_name)
         demo(opt, glob.glob(f'{root}/{seq_name}/*.mp4')[0], f'../demos/{seq_name}')
