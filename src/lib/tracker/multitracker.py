@@ -258,6 +258,8 @@ class JDETracker(object):
         dets = self.merge_outputs([dets])[1]
 
         remain_inds = dets[:, 4] > self.opt.conf_thres
+        remain_inds &= (dets[:, 1] + dets[:, 3]) / 2 > height / 2
+        remain_inds &= (dets[:, 3] - dets[:, 1]) > height / 10
         dets = dets[remain_inds]
         id_feature = id_feature[remain_inds]
 

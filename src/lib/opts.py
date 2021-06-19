@@ -188,7 +188,7 @@ class opts(object):
         return opt
 
     def init(self, args=''):
-        default_dataset_info = {'width': 768, 'height': 1024,
+        default_dataset_info = {'width': 1024, 'height': 768,
                                 'num_classes': 1, 'nID': 10,
                                 'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278]}
 

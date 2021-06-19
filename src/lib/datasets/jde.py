@@ -89,13 +89,13 @@ class LoadVideo:  # for inference
         self.frame_rate = int(round(self.cap.get(cv2.CAP_PROP_FPS)))
         self.vw = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.vh = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.vn = int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        self.vn = min(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)), 10000)
 
         self.width = img_size[0]
         self.height = img_size[1]
         self.count = 0
 
-        self.w, self.h = 1920, 1080
+        self.w, self.h = int(1080 * (self.vw / self.vh)), 1080
         print('Lenth of the video: {:d} frames'.format(self.vn))
 
     def get_size(self, vw, vh, dw, dh):
@@ -113,7 +113,8 @@ class LoadVideo:  # for inference
             raise StopIteration
         # Read image
         res, img0 = self.cap.read()  # BGR
-        assert img0 is not None, 'Failed to load frame {:d}'.format(self.count)
+        if img0 is None:
+            img0 = np.zeros([self.h, self.w, 3], dtype=np.uint8)
         img0 = cv2.resize(img0, (self.w, self.h))
 
         # Padded resize
@@ -159,12 +160,12 @@ def random_affine(img, targets=None, degrees=(-10, 10), translate=(.1, .1), scal
     a = random.random() * (degrees[1] - degrees[0]) + degrees[0]
     # a += random.choice([-180, -90, 0, 90])  # 90deg rotations added to small rotations
     s = random.random() * (scale[1] - scale[0]) + scale[0]
-    R[:2] = cv2.getRotationMatrix2D(angle=a, center=(img.shape[1] / 2, img.shape[0] / 2), scale=s)
+    R[:2] = cv2.getRotationMatrix2D(angle=a, center=(width / 2, height / 2), scale=s)
 
     # Translation
     T = np.eye(3)
-    T[0, 2] = (random.random() * 2 - 1) * translate[0] * img.shape[0] + border  # x translation (pixels)
-    T[1, 2] = (random.random() * 2 - 1) * translate[1] * img.shape[1] + border  # y translation (pixels)
+    T[0, 2] = (random.random() * 2 - 1) * translate[0] * width + border  # x translation (pixels)
+    T[1, 2] = (random.random() * 2 - 1) * translate[1] * height + border  # y translation (pixels)
 
     # Shear
     S = np.eye(3)
