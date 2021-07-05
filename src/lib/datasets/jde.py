@@ -1,23 +1,10 @@
 import glob
 import math
 import os
-import os.path as osp
 import random
-import time
-from collections import OrderedDict
 
 import cv2
-import json
 import numpy as np
-import torch
-import copy
-
-from torch.utils.data import Dataset
-from torchvision.transforms import transforms as T
-from cython_bbox import bbox_overlaps as bbox_ious
-from lib.opts import opts
-from lib.utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
-from lib.utils.utils import xyxy2xywh, generate_anchors, xywh2xyxy, encode_delta
 
 
 class LoadImages:  # for inference
@@ -84,18 +71,19 @@ class LoadImages:  # for inference
 
 
 class LoadVideo:  # for inference
-    def __init__(self, path, img_size=(1088, 608)):
-        self.cap = cv2.VideoCapture(path)
+    def __init__(self, path, img_size=(1088, 608), frame_step=1):
+        self.path = path
+        self.cap = cv2.VideoCapture(self.path)
         self.frame_rate = int(round(self.cap.get(cv2.CAP_PROP_FPS)))
         self.vw = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.vh = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.vn = min(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)), 10000)
+        self.vn = min(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)), 5000) // frame_step
 
         self.width = img_size[0]
         self.height = img_size[1]
         self.count = 0
+        self.step = frame_step
 
-        self.w, self.h = int(1080 * (self.vw / self.vh)), 1080
         print('Lenth of the video: {:d} frames'.format(self.vn))
 
     def get_size(self, vw, vh, dw, dh):
@@ -104,21 +92,23 @@ class LoadVideo:  # for inference
         return int(vw * a), int(vh * a)
 
     def __iter__(self):
-        self.count = -1
+        self.count = -self.step
+        self.cap = cv2.VideoCapture(self.path)
         return self
 
     def __next__(self):
-        self.count += 1
-        if self.count == len(self):
+        for _ in range(self.step - 1):
+            self.cap.read()
+        self.count += self.step
+        if self.count >= len(self):
             raise StopIteration
         # Read image
         res, img0 = self.cap.read()  # BGR
         if img0 is None:
-            img0 = np.zeros([self.h, self.w, 3], dtype=np.uint8)
-        img0 = cv2.resize(img0, (self.w, self.h))
+            img0 = np.zeros([self.vh, self.vw, 3], dtype=np.uint8)
 
         # Padded resize
-        img, _, _, _ = letterbox(img0, height=self.height, width=self.width)
+        img, _, _, _ = letterbox(img0, height=self.height, width=self.width)  # C,H,W
 
         # Normalize RGB
         img = img[:, :, ::-1].transpose(2, 0, 1)
@@ -129,7 +119,7 @@ class LoadVideo:  # for inference
         return self.count, img, img0
 
     def __len__(self):
-        return self.vn  # number of files
+        return self.vn
 
 
 def letterbox(img, height=608, width=1088,
