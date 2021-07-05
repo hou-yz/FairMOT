@@ -24,7 +24,7 @@ class AverageMeter(object):
           self.avg = self.sum / self.count
 
 
-def xyxy2xywh(x):
+def xyxy2ctwh(x):
     # Convert bounding box format from [x1, y1, x2, y2] to [x, y, w, h]
     y = torch.zeros(x.shape) if x.dtype is torch.float32 else np.zeros(x.shape)
     y[:, 0] = (x[:, 0] + x[:, 2]) / 2
@@ -34,14 +34,6 @@ def xyxy2xywh(x):
     return y
 
 
-def xywh2xyxy(x):
-    # Convert bounding box format from [x, y, w, h] to [x1, y1, x2, y2]
-    y = torch.zeros(x.shape) if x.dtype is torch.float32 else np.zeros(x.shape)
-    y[:, 0] = (x[:, 0] - x[:, 2] / 2)
-    y[:, 1] = (x[:, 1] - x[:, 3] / 2)
-    y[:, 2] = (x[:, 0] + x[:, 2] / 2)
-    y[:, 3] = (x[:, 1] + x[:, 3] / 2)
-    return y
 
 def ap_per_class(tp, conf, pred_cls, target_cls):
     """ Compute the average precision, given the recall and precision curves.

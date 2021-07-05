@@ -11,7 +11,7 @@ import copy
 
 from torchvision.datasets import VisionDataset
 from lib.utils.image import gaussian_radius, draw_umich_gaussian, draw_msra_gaussian
-from lib.utils.utils import xyxy2xywh
+from lib.utils.utils import xyxy2ctwh
 from lib.datasets.jde import letterbox, random_affine
 
 
@@ -184,7 +184,7 @@ class MOTDataset(VisionDataset):
         nL = len(labels)
         if nL > 0:
             # convert xyxy to xywh
-            labels[:, 2:6] = xyxy2xywh(labels[:, 2:6].copy())  # / height
+            labels[:, 2:6] = xyxy2ctwh(labels[:, 2:6].copy())  # / height
             labels[:, 2] /= width
             labels[:, 3] /= height
             labels[:, 4] /= width
