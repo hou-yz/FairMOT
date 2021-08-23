@@ -38,30 +38,31 @@ def extract_headshot(result_filename, dataloader, save_dir):
     print(f'saved {len(res)} headshots from {len(dataloader)} frames')
 
 
-def demo(opt, fname, out_fpath):
+def demo(opt, fname, out_fpath, save_video=True, save_headshot=False):
     mkdir_if_missing(out_fpath)
 
     logger.info('Starting tracking...')
     dataloader = datasets.LoadVideo(fname, opt.img_size)
     result_filename = os.path.join(out_fpath, 'results.txt')
 
-    frame_dir = None if opt.output_format == 'text' else osp.join(out_fpath, 'frame')
+    frame_dir = None if not save_video else osp.join(out_fpath, 'frame')
     eval_seq(opt, dataloader, 'mot', result_filename, save_dir=frame_dir, show_image=False)
 
     # video
-    os.system(f'/usr/bin/ffmpeg -y -f image2 -i {osp.join(out_fpath, "frame")}/%05d.jpg -vf scale=-1:720 '
-              f'-b 5000k -c:v mpeg4 {osp.join(out_fpath, "results.mp4")}')
+    if save_video:
+        os.system(f'/usr/bin/ffmpeg -y -f image2 -i {osp.join(out_fpath, "frame")}/%05d.jpg -vf scale=-1:768 '
+                  f'-b 5000k -c:v mpeg4 {osp.join(out_fpath, "results.mp4")}')
     # headshot
-    # dataloader = datasets.LoadVideo(fname, opt.img_size)
-    # extract_headshot(result_filename, dataloader, osp.join(out_fpath, 'headshot'))
+    if save_headshot:
+        dataloader = datasets.LoadVideo(fname, opt.img_size)
+        extract_headshot(result_filename, dataloader, osp.join(out_fpath, 'headshot'))
 
 
 if __name__ == '__main__':
     opt = opts().init()
-    root = '/home/houyz/Data/cattle/test'
-    for seq_name in sorted(os.listdir(root)):
+    folder = '210603'
+    opt.load_model = '../exp/cattle_dla34/model_last.pth'
+    for seq_name in sorted(os.listdir(f'/home/houyz/Data/cattle/{folder}')):
         print(seq_name)
-        demo(opt, glob.glob(f'{root}/{seq_name}/*.mp4')[0], f'../demos/{seq_name}')
-        shutil.rmtree(f'../demos/{seq_name}/frame')
-
-        # break
+        demo(opt, f'/home/houyz/Data/cattle/{folder}/{seq_name}',
+             f'../results/{folder}/{seq_name.split(".")[0]}', save_video=False)
