@@ -21,17 +21,16 @@ class MOTDataset(VisionDataset):
         self.opt = opt
         self.num_classes = 1
         self.imgs_seq, self.seq_gts = {}, {}
-        self.seq_num_id, self.seq_start_id = {}, {}
+        self.seq_start_id = {}
         start_id = 0
         for seq_name in sorted(os.listdir(root)):
-            if 'SDP' not in seq_name:
+            if 'SDP' not in seq_name and 'MOT17' in root:
                 continue
             for img in sorted(glob.glob(f'{root}/{seq_name}/img1/*.jpg')):
                 self.imgs_seq[img] = seq_name
             self.seq_gts[seq_name] = np.loadtxt(f'{root}/{seq_name}/gt/gt.txt', delimiter=',')
-            self.seq_num_id[seq_name] = int(np.max(self.seq_gts[seq_name][:, 1]))
             self.seq_start_id[seq_name] = start_id
-            start_id += self.seq_num_id[seq_name]
+            start_id += int(np.max(self.seq_gts[seq_name][:, 1]))
         self.nID = start_id
         self.width = img_size[0]
         self.height = img_size[1]
@@ -191,6 +190,28 @@ class MOTDataset(VisionDataset):
             img = self.transforms(img)
 
         return img, labels
+
+
+class SiameseDataset(VisionDataset):
+    def __init__(self, mot_dataset, window_length=10):
+        super().__init__('')
+        self.mot_dataset = mot_dataset
+        self.window_length = window_length
+
+    def __len__(self):
+        return len(self.mot_dataset)
+
+    def __getitem__(self, index1):
+        img_fname1 = list(self.mot_dataset.imgs_seq.keys())[index1]
+        seq_name = self.mot_dataset.imgs_seq[img_fname1]
+        frame1 = int(re.search(r'\d+', img_fname1.split('/')[-1].split('.')[0]).group())
+        ret1 = self.mot_dataset.__getitem__(index1)
+        # find another img
+        frame2 = np.random.randint(-self.window_length, self.window_length) + frame1
+        frame2 = min(max(frame2, 1), int(np.max(self.mot_dataset.seq_gts[seq_name][:, 0])))
+        index2 = index1 + frame2 - frame1
+        ret2 = self.mot_dataset.__getitem__(index2)
+        return ret1, ret2
 
 
 if __name__ == '__main__':

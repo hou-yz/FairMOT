@@ -89,6 +89,42 @@ class MotLoss(torch.nn.Module):
         return loss, loss_stats
 
 
+class SiameseLoss(torch.nn.Module):
+    def __init__(self, opt, motloss):
+        super(SiameseLoss, self).__init__()
+        self.opt = opt
+        self.motloss = motloss
+
+    def forward(self, outputs1, outputs2, batch1, batch2):
+        loss, loss_stats = self.motloss(outputs1, batch1)
+        for s in range(self.opt.num_stacks):
+            output1 = outputs1[s]
+            output2 = outputs2[s]
+
+            id_head1 = _tranpose_and_gather_feat(output1['id'], batch1['ind'])
+            id_head1 = id_head1[batch1['reg_mask'] > 0].contiguous()
+            id_target1 = batch1['ids'][batch1['reg_mask'] > 0]
+            id_head2 = _tranpose_and_gather_feat(output2['id'], batch2['ind'])
+            id_head2 = id_head2[batch2['reg_mask'] > 0].contiguous()
+            id_target2 = batch2['ids'][batch2['reg_mask'] > 0]
+
+            id_head = torch.cat([id_head1, id_head2], dim=0)
+            id_target = torch.cat([id_target1, id_target2], dim=0)
+            id_dists = (id_head.unsqueeze(1) - id_head.unsqueeze(0)).norm(2, dim=2)
+            id_weight = (id_target.unsqueeze(1) == id_target.unsqueeze(0)).float()
+            id_weight = id_weight - (id_weight.sum() - id_weight.shape[0]) / (
+                    id_weight.shape[0] * (id_weight.shape[0] - 1))
+            idx = np.array([np.arange(id_weight.shape[0]), np.arange(id_weight.shape[0])])
+            id_weight[idx] = 0
+
+            siamese_loss = (id_weight * id_dists).mean()
+
+        loss += 0.1 * siamese_loss
+        loss_stats.update({'siamese_loss': siamese_loss})
+
+        return loss, loss_stats
+
+
 class MotTrainer(BaseTrainer):
     def __init__(self, opt, model, optimizer=None):
         super(MotTrainer, self).__init__(opt, model, optimizer=optimizer)
@@ -109,3 +145,14 @@ class MotTrainer(BaseTrainer):
             batch['meta']['s'].cpu().numpy(),
             output['hm'].shape[2], output['hm'].shape[3], output['hm'].shape[1])
         results[batch['meta']['img_id'].cpu().numpy()[0]] = dets_out[0]
+
+
+class SiameseTrainer(MotTrainer):
+    def __init__(self, opt, model, optimizer=None):
+        super(SiameseTrainer, self).__init__(opt, model, optimizer=optimizer)
+
+    def _get_losses(self, opt):
+        loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss', 'siamese_loss']
+        mot_loss = MotLoss(opt)
+        loss = SiameseLoss(opt, mot_loss)
+        return loss_states, loss
