@@ -92,7 +92,8 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
         for t in online_targets:
             tlwh = t.tlwh
             tid = t.track_id
-            if tlwh[2] * tlwh[3] > opt.min_box_area:
+            vertical = tlwh[2] / tlwh[3] > 1.6
+            if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
                 online_tlwhs.append(tlwh)
                 online_ids.append(tid)
                 # online_scores.append(t.score)
@@ -114,7 +115,8 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
     return frame_id, timer.average_time, timer.calls
 
 
-def main(opt, root='/data/MOT16/train', save_images=False, save_videos=False, show_image=True):
+def main(opt, root='/home/houyz/Data/MOT15/train/', seqs=None, foldername='img1', save_images=False, save_videos=False,
+         show_image=True):
     logger.setLevel(logging.INFO)
     exp_name = opt.load_model.split('/')[-2]
     result_root = os.path.join(root, '..', 'results', exp_name)
@@ -125,13 +127,19 @@ def main(opt, root='/data/MOT16/train', save_images=False, save_videos=False, sh
     accs = []
     n_frame = 0
     timer_avgs, timer_calls = [], []
-    for seq in sorted(os.listdir(root)):
+    seqs = sorted(os.listdir(root)) if seqs is None else seqs
+    for seq in seqs:
         output_dir = os.path.join(root, '..', 'outputs', exp_name, seq) if save_images or save_videos else None
         logger.info('start seq: {}'.format(seq))
-        dataloader = datasets.LoadImages(osp.join(root, seq, 'images'), opt.img_size)
+        dataloader = datasets.LoadImages(osp.join(root, seq, foldername), opt.img_size)
+        try:
+            meta_info = open(os.path.join(root, seq, 'seqinfo.ini')).read()
+            frame_rate = int(meta_info[meta_info.find('frameRate') + 10:meta_info.find('\nseqLength')])
+        except:
+            frame_rate = 30
         result_filename = os.path.join(result_root, '{}.txt'.format(seq))
         nf, ta, tc = eval_seq(opt, dataloader, data_type, result_filename,
-                              save_dir=output_dir, show_image=show_image)
+                              save_dir=output_dir, show_image=show_image, frame_rate=frame_rate)
         n_frame += nf
         timer_avgs.append(ta)
         timer_calls.append(tc)
@@ -153,7 +161,7 @@ def main(opt, root='/data/MOT16/train', save_images=False, save_videos=False, sh
     # get summary
     metrics = mm.metrics.motchallenge_metrics
     mh = mm.metrics.create()
-    summary = Evaluator.get_summary(accs, sorted(os.listdir(root)), metrics)
+    summary = Evaluator.get_summary(accs, seqs, metrics)
     strsummary = mm.io.render_summary(
         summary,
         formatters=mh.formatters,
@@ -166,7 +174,7 @@ def main(opt, root='/data/MOT16/train', save_images=False, save_videos=False, sh
 if __name__ == '__main__':
     opt = opts().init()
     main(opt,
-         root='/home/houyz/Data/cattle/test/',
+         # seqs=['KITTI-13', 'KITTI-17', 'ADL-Rundle-6', 'PETS09-S2L1', 'TUD-Campus', 'TUD-Stadtmitte'],
          show_image=False,
          save_images=False,
          save_videos=False)

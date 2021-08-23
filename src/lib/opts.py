@@ -13,7 +13,7 @@ class opts(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         # basic experiment setting
-        self.parser.add_argument('--exp_id', default='cattle_dla34')
+        self.parser.add_argument('--exp_id', default='mot_dla34')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model', default='../models/ctdet_coco_dla_2x.pth',
                                  help='path to pretrained model')
@@ -85,7 +85,7 @@ class opts(object):
                                       'test on test set')
 
         # test
-        self.parser.add_argument('--K', type=int, default=50,
+        self.parser.add_argument('--K', type=int, default=500,
                                  help='max number of output objects.')
         self.parser.add_argument('--not_prefetch_test', action='store_true',
                                  help='not use parallal data pre-processing.')
@@ -188,8 +188,8 @@ class opts(object):
         return opt
 
     def init(self, args=''):
-        default_dataset_info = {'width': 1024, 'height': 768,
-                                'num_classes': 1, 'nID': 10,
+        default_dataset_info = {'width': 1088, 'height': 608,
+                                'num_classes': 1, 'nID': 14455,
                                 'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278]}
 
         class Struct:

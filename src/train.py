@@ -10,7 +10,7 @@ from torchvision.transforms import transforms as T
 from lib.opts import opts, update_dataset_info_and_set_heads
 from lib.models.model import create_model, load_model, save_model
 from lib.logger import Logger
-from lib.datasets.mot_cattle import MOTDataset
+from lib.datasets.mot17 import MOTDataset
 from lib.trains.mot import MotTrainer
 
 
@@ -20,7 +20,7 @@ def main(opt):
 
     print('Setting up data...')
     transforms = T.Compose([T.ToTensor()])
-    dataset = MOTDataset(opt, '/home/houyz/Data/cattle/train', augment=True, transforms=transforms)
+    dataset = MOTDataset(opt, '/home/houyz/Data/MOT17/train', augment=True, transforms=transforms)
     opt = update_dataset_info_and_set_heads(opt, dataset)
     print(opt)
 
@@ -29,7 +29,7 @@ def main(opt):
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
-    optimizer = torch.optim.Adam(model.parameters(), opt.lr)
+    optimizer = torch.optim.Adam(model.id.parameters(), opt.lr)
     start_epoch = 0
 
     # Get dataloader

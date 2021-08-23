@@ -192,7 +192,7 @@ class JDETracker(object):
 
         self.frame_id = 0
         self.det_thresh = opt.conf_thres
-        self.max_time_lost = frame_rate * 10
+        self.max_time_lost = int(frame_rate / 30.0 * opt.track_buffer)
         self.max_per_image = opt.K
 
         self.kalman_filter = KalmanFilter()
@@ -258,8 +258,9 @@ class JDETracker(object):
         dets = self.merge_outputs([dets])[1]
 
         remain_inds = dets[:, 4] > self.opt.conf_thres
-        remain_inds &= (dets[:, 1] + dets[:, 3]) / 2 > height / 2
-        remain_inds &= (dets[:, 3] - dets[:, 1]) > height / 10
+        # for cattle only
+        # remain_inds &= (dets[:, 1] + dets[:, 3]) / 2 > height / 2
+        # remain_inds &= (dets[:, 3] - dets[:, 1]) > height / 10
         dets = dets[remain_inds]
         id_feature = id_feature[remain_inds]
 
