@@ -92,7 +92,7 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
         for t in online_targets:
             tlwh = t.tlwh
             tid = t.track_id
-            vertical = tlwh[2] / tlwh[3] > 1.6
+            vertical = tlwh[2] / tlwh[3] > 1.6 if not opt.cattle else 0
             if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
                 online_tlwhs.append(tlwh)
                 online_ids.append(tid)
@@ -174,7 +174,7 @@ def main(opt, root='/home/houyz/Data/MOT15/train/', seqs=None, foldername='img1'
 if __name__ == '__main__':
     opt = opts().init()
     main(opt,
-         # seqs=['KITTI-13', 'KITTI-17', 'ADL-Rundle-6', 'PETS09-S2L1', 'TUD-Campus', 'TUD-Stadtmitte'],
+         seqs=['KITTI-13', 'KITTI-17', 'ADL-Rundle-6', 'PETS09-S2L1', 'TUD-Campus', 'TUD-Stadtmitte'],
          show_image=False,
          save_images=False,
          save_videos=False)

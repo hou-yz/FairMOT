@@ -79,14 +79,14 @@ class LoadVideo:  # for inference
         self.frame_rate = int(round(self.cap.get(cv2.CAP_PROP_FPS)))
         self.vw = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.vh = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        self.vn = min(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)), 5000) // frame_step
+        self.vn = min(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT)), 5000)
 
         self.width = img_size[0]
         self.height = img_size[1]
         self.count = 0
         self.step = frame_step
 
-        print('Lenth of the video: {:d} frames'.format(self.vn))
+        print(f'num_frames: {self.vn}, step: {frame_step}')
 
     def get_size(self, vw, vh, dw, dh):
         wa, ha = float(dw) / vw, float(dh) / vh
@@ -94,7 +94,7 @@ class LoadVideo:  # for inference
         return int(vw * a), int(vh * a)
 
     def __iter__(self):
-        self.count = -self.step
+        self.count = 0
         self.cap = cv2.VideoCapture(self.path)
         return self
 
@@ -102,7 +102,7 @@ class LoadVideo:  # for inference
         for _ in range(self.step - 1):
             self.cap.read()
         self.count += self.step
-        if self.count >= len(self):
+        if self.count > self.vn:
             raise StopIteration
         # Read image
         res, img0 = self.cap.read()  # BGR
@@ -121,7 +121,7 @@ class LoadVideo:  # for inference
         return self.count, img, img0
 
     def __len__(self):
-        return self.vn
+        return self.vn // self.step
 
 
 def letterbox(img, height=608, width=1088,

@@ -60,8 +60,12 @@ def demo(opt, fname, out_fpath, save_video=True, save_headshot=False):
 
 if __name__ == '__main__':
     opt = opts().init()
-    folder = '210603'
+    opt.cattle = True
+    opt.img_size = [1024, 768]
+    opt.exp_id = 'cattle_dla34'
     opt.load_model = '../exp/cattle_dla34/model_last.pth'
+    opt.K = 50
+    folder = '210603_mini'
     for seq_name in sorted(os.listdir(f'/home/houyz/Data/cattle/{folder}')):
         print(seq_name)
         demo(opt, f'/home/houyz/Data/cattle/{folder}/{seq_name}',

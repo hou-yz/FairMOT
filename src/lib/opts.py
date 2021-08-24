@@ -13,6 +13,7 @@ class opts(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         # basic experiment setting
+        self.parser.add_argument('--cattle', action='store_true')
         self.parser.add_argument('--exp_id', default='mot_dla34')
         self.parser.add_argument('--test', action='store_true')
         self.parser.add_argument('--load_model', default='../models/ctdet_coco_dla_2x.pth',

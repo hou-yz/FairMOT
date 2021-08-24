@@ -29,7 +29,7 @@ def main(opt):
 
     print('Creating model...')
     model = create_model(opt.arch, opt.heads, opt.head_conv)
-    optimizer = torch.optim.Adam(model.id.parameters(), opt.lr)
+    optimizer = torch.optim.Adam(model.parameters(), opt.lr)
     start_epoch = 0
 
     # Get dataloader
